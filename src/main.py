@@ -18,7 +18,7 @@ def main():
     """
 
     # 1) Preprocessing - load, define label, and split data.
-    preprocessor = DataPreprocessor(csv_path="Job Prediction By Resume.csv")
+    preprocessor = DataPreprocessor(csv_path="../data/Job Prediction By Resume.csv")
     preprocessor.load_data()
     preprocessor.define_label("Job Title")
     train_df, validation_df, test_df = preprocessor.split_data()
