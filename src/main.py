@@ -1,15 +1,18 @@
 import numpy as np
 from data_preprocessing import DataPreprocessor
+from src.dataset import DatasetManager
+
+
 from Models.baseline import BaselineModel
-from Models.logistic_regression import LogisticRegressionModel
-from Models.nn_simple import SimpleNNModel
-from Models.nn_advanced import AdvancedNNModel
+# from Models.logistic_regression import LogisticRegressionModel
+# from Models.nn_simple import SimpleNNModel
+# from Models.nn_advanced import AdvancedNNModel
 
-from sklearn.metrics import accuracy_score, precision_score, recall_score
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
+# from sklearn.metrics import accuracy_score, precision_score, recall_score
+# from tensorflow.keras.preprocessing.text import Tokenizer
+# from tensorflow.keras.preprocessing.sequence import pad_sequences
 
-def main():
+def  main():
     # explanation of stage 1 - preprocessing:
     """
     1. we create an instance of the DataPreprocessor class that called preprocessor.
@@ -17,34 +20,37 @@ def main():
     3. we split the data into training and testing sets, this is done by calling the split_data method that she is in the DataPreprocessor class.
     """
 
-    # 1) Preprocessing - load, define label, and split data.
+    # 1) Preprocessing: Load data, define label,
+    """"
+        1. Create an instance of the DataPreprocessor class named preprocessor.
+        2. Load the data from the CSV file.
+        3. Define the label column as "title job".
+        4. Convert the data to numbers
+        5. convert the data to tensor
+        
+    """
     preprocessor = DataPreprocessor(csv_path="../data/Job Prediction By Resume.csv")
     preprocessor.load_data()
-    preprocessor.define_label("Job Title")
-    train_df, validation_df, test_df = preprocessor.split_data()
+    # define variable named data as preprocessor.dataset.data and then show df.shape
 
-    # explanation of stage 2 - training and testing the models:
-    """
-    1. we make 2 variables:
-        X_train_text = the text data from the training set.
-        X_test_text = the text data from the testing set.
-    2. we make 2 variables:
-        y_train = the labels from the training set.
-        y_test = the labels from the testing set.
-    """
-    # Separate features and labels
-    X_train_text = train_df["combined_text"]
-    X_test_text = test_df["combined_text"]
+    data = preprocessor.dataset
+    # print(" the dataset contain x rows and y columns and the do df shape to show the shape of the data")
+    # print(f"the dataset contain {data.shape[0]} rows and {data.shape[1]} columns")
 
-    y_train = train_df["job_label"].values
-    y_test = test_df["job_label"].values
+    preprocessor.define_label("title job")
+
+    # preprocessor.visualize_data()
+
 
     # 2) Baseline:
-    """
-    1. we create an instance of the BaselineModel class that called
-    2. we train the baseline model using the train method that returns the majority class.
-    
-    """
+
+    baseline_model = BaselineModel(preprocessor)
+    baseline_model.train()
+
+
+"""
+    # 2) Baseline:
+  
     baseline_model = BaselineModel()
     baseline_model.train(y_train)
     y_pred_baseline = baseline_model.predict(X_test_text)
@@ -96,5 +102,8 @@ def main():
 
     print("Completed all models. Finished!")
 
+if __name__ == "__main__":
+    main()
+"""
 if __name__ == "__main__":
     main()
