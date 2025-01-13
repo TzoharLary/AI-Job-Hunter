@@ -3,7 +3,7 @@ from data_preprocessing import DataPreprocessor
 from src.dataset import DatasetManager
 from metrics import calculate_accuracy, calculate_precision, calculate_recall
 
-from Models.baseline import BaselineModel
+# from Models.baseline import BaselineModel
 # from Models.logistic_regression import LogisticRegressionModel
 # from Models.nn_simple import SimpleNNModel
 # from Models.nn_advanced import AdvancedNNModel
@@ -39,23 +39,34 @@ def  main():
 
     preprocessor.define_label("title job")
 
-    preprocessor.visualize_data()
-    # TODO: remove Tags field from datapreprocessor becsuse he dont realy pointer to y field in the dataset object
+    # preprocessor.visualize_data()
+    # TODO: remove Tags field from datapreprocessor because he dont really pointer to y field in the dataset object
 
-    train_dataset, val_dataset, test_dataset = data.datasetManager.get_datasets()
+    train_dataset, val_dataset, test_dataset = preprocessor.datasetManager.get_datasets()
+
     train_Label = [y for _, y in train_dataset]
+    train_Example = [x for x, _ in train_dataset]
+    val_Label = [y for _, y in val_dataset]
+    val_Example = [x for x, _ in val_dataset]
+    test_Label = [y for _, y in test_dataset]
+    test_Example = [x for x, _ in test_dataset]
+    # this print really return the first 3 examples and labels of the train, validation, and test datasets
+    # print(f"first 10 Examples and Labels: {train_Example[:3]} {train_Label[:3]}")
+    # print(f"first 10 Examples and Labels: {val_Example[:3]} {val_Label[:3]}")
+    # print(f"first 10 Examples and Labels: {test_Example[:3]} {test_Label[:3]}")
+
 
 
     # 2) Baseline:
 
     baseline_model = BaselineModel(preprocessor)
-    # print(data.y)
+    # # print(data.y)
     baseline_model.train()
-    prediction = baseline_model.predict()
-    print("=== Baseline Model ===")
-    print(f"recall: {calculate_recall(data.y, prediction)}")
-    print(f"precision: {calculate_precision(data.y, prediction)}")
-    print(f"accuracy: {calculate_accuracy(data.y, prediction)}")
+    # prediction = baseline_model.predict()
+    # print("=== Baseline Model ===")
+    # print(f"recall: {calculate_recall(data.y, prediction)}")
+    # print(f"precision: {calculate_precision(data.y, prediction)}")
+    # print(f"accuracy: {calculate_accuracy(data.y, prediction)}")
 
 
 """

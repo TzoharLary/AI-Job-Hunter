@@ -59,7 +59,7 @@ class DataPreprocessor:
         dataset.y = if dataset is CustomDataset object, then dataset.y = the value of the field y in dataset.
         dataset.data = the csv file
         """
-        # define the y field of the dataset object as the column that here columne name is like the label_col
+        # define the y field of the dataset object as the column that here column name is like the label_col
         self.dataset.y = self.dataset.data[label_col]
         self.dataset.X = self.dataset.data.drop(columns=[label_col])  # Update the features
 
