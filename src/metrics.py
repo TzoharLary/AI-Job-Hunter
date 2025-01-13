@@ -28,8 +28,7 @@ def calculate_accuracy(true_labels, predictions, writer=None, step=0):
     if writer:
         with writer.as_default():
             tf.summary.scalar("accuracy", accuracy, step=step)
-    return accuracy
-
+    return accuracy * 100
 # Function to calculate precision
 def calculate_precision(true_labels, predictions, writer=None, step=0):
     """
@@ -51,9 +50,9 @@ def calculate_precision(true_labels, predictions, writer=None, step=0):
     if writer:
         with writer.as_default():
             tf.summary.scalar("precision", precision, step=step)
-    return precision
+    return precision * 100
 
-# Function to calculate recall
+# Function to calculate recall - this recall weight by the relative frequency of each tag in the truth tags
 def calculate_recall(true_labels, predictions, writer=None, step=0):
     """
     Calculate recall for the given true labels and predictions.
@@ -75,7 +74,7 @@ def calculate_recall(true_labels, predictions, writer=None, step=0):
     if writer:
         with writer.as_default():
             tf.summary.scalar("recall", recall, step=step)
-    return recall
+    return recall * 100
 
 # Function to calculate F1-score
 def calculate_f1_score(true_labels, predictions, writer=None, step=0):

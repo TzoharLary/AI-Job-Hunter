@@ -16,14 +16,12 @@ class BaselineModel:
         self.data = data
 
 
-    def train(self):
+    def train(self, train_labels: list):
         """
         1. values  = the unique values in the Tags column
         2. counts = the number of times each value appears in the Tags column
         """
 
-        train_dataset = self.data.datasetManager.get_dataset("train")
-        train_labels = [y for _, y in train_dataset]
         train_counts = torch.tensor(train_labels).bincount()
         idx = np.argmax(train_counts)
         self.majority_class = train_labels[idx]
@@ -44,14 +42,15 @@ class BaselineModel:
         print(f"the majority class is {self.data.category_mapping[self.majority_class]}")
         """
 
-    def predict(self):
+    def predict(self, test_labels: list):
         # test_dataset = self.data.datasetManager.get_dataset("train")
         # #extract the train examples
         # train_EX = [x for x, _ in train_dataset]
 
 
         # doesnt matter what the input is, always predict the majority class
-        return np.full(shape=(len(X),), fill_value=self.majority_class)
+        return np.full(shape=(len(test_labels),), fill_value=self.majority_class)
+        # return np.full(shape=(len(test_Label),), fill_value=self.majority_class)
 
     # def evaluate(self, y_true, y_pred):
     #     acc = accuracy_score(y_true, y_pred)

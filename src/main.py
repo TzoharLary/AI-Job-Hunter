@@ -3,7 +3,7 @@ from data_preprocessing import DataPreprocessor
 from src.dataset import DatasetManager
 from metrics import calculate_accuracy, calculate_precision, calculate_recall
 
-# from Models.baseline import BaselineModel
+from Models.baseline import BaselineModel
 # from Models.logistic_regression import LogisticRegressionModel
 # from Models.nn_simple import SimpleNNModel
 # from Models.nn_advanced import AdvancedNNModel
@@ -61,12 +61,13 @@ def  main():
 
     baseline_model = BaselineModel(preprocessor)
     # # print(data.y)
-    baseline_model.train()
-    # prediction = baseline_model.predict()
-    # print("=== Baseline Model ===")
-    # print(f"recall: {calculate_recall(data.y, prediction)}")
-    # print(f"precision: {calculate_precision(data.y, prediction)}")
-    # print(f"accuracy: {calculate_accuracy(data.y, prediction)}")
+    baseline_model.train(train_Label)
+    prediction = baseline_model.predict(test_Label)
+    # so far this code work until here
+    print("=== Baseline Model ===")
+    print(f"recall: {calculate_recall(test_Label, prediction)}")
+    print(f"precision: {calculate_precision(test_Label, prediction)}")
+    print(f"accuracy: {calculate_accuracy(test_Label, prediction)}")
 
 
 """
