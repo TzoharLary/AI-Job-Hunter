@@ -1,4 +1,4 @@
-from dataset import CustomDataset, DatasetManager
+from src.dataset import CustomDataset, DatasetManager
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
@@ -70,7 +70,6 @@ class DataPreprocessor:
 
         # print(f"the label is converted to numbers as  {self.dataset.y}")
         self.datasetManager = DatasetManager(self.dataset)
-
         train_dataset, val_dataset, test_dataset = self.datasetManager.get_datasets()
 
     def convert_to_tensors(self):

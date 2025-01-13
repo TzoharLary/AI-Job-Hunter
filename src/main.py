@@ -1,7 +1,7 @@
 import numpy as np
 from data_preprocessing import DataPreprocessor
 from src.dataset import DatasetManager
-
+from metrics import calculate_accuracy, calculate_precision, calculate_recall
 
 from Models.baseline import BaselineModel
 # from Models.logistic_regression import LogisticRegressionModel
@@ -39,13 +39,23 @@ def  main():
 
     preprocessor.define_label("title job")
 
-    # preprocessor.visualize_data()
+    preprocessor.visualize_data()
+    # TODO: remove Tags field from datapreprocessor becsuse he dont realy pointer to y field in the dataset object
+
+    train_dataset, val_dataset, test_dataset = data.datasetManager.get_datasets()
+    train_Label = [y for _, y in train_dataset]
 
 
     # 2) Baseline:
 
     baseline_model = BaselineModel(preprocessor)
+    # print(data.y)
     baseline_model.train()
+    prediction = baseline_model.predict()
+    print("=== Baseline Model ===")
+    print(f"recall: {calculate_recall(data.y, prediction)}")
+    print(f"precision: {calculate_precision(data.y, prediction)}")
+    print(f"accuracy: {calculate_accuracy(data.y, prediction)}")
 
 
 """

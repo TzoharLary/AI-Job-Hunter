@@ -81,6 +81,13 @@ class DatasetManager:
     def get_datasets(self):
         return self.train_dataset, self.val_dataset, self.test_dataset
 
+    def get_dataset(self, dataset_name):
+        if dataset_name == "train":
+            return self.train_dataset
+        elif dataset_name == "val":
+            return self.val_dataset
+        elif dataset_name == "test":
+            return self.test_dataset
     def Convert_Features(self, features):
 
         # create Featured_Name to contain list of the first row in the X field
