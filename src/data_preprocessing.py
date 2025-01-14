@@ -24,6 +24,8 @@ class DataPreprocessor:
         self.csv_path = csv_path
         self.dataset = None
         self.datasetManager = None
+        self.dataColumns = None
+
         self.Features = None
         self.Tags = None
 

@@ -3,8 +3,9 @@ from data_preprocessing import DataPreprocessor
 from src.dataset import DatasetManager
 from metrics import calculate_accuracy, calculate_precision, calculate_recall
 
+
+from Models.softmax import SoftmaxModel
 from Models.baseline import BaselineModel
-# from Models.logistic_regression import LogisticRegressionModel
 # from Models.nn_simple import SimpleNNModel
 # from Models.nn_advanced import AdvancedNNModel
 
@@ -55,10 +56,22 @@ def  main():
     # print(f"first 10 Examples and Labels: {val_Example[:3]} {val_Label[:3]}")
     # print(f"first 10 Examples and Labels: {test_Example[:3]} {test_Label[:3]}")
 
+    # 3) Softmax
+    input_dim = len(train_Label)
+    num_classes = len(preprocessor.category_mapping)
+    Softmax_model = SoftmaxModel(input_dim=input_dim, num_classes=num_classes, lr=0.01)
+    # Train the model
+    print("Training the SoftmaxModel...")
+    Softmax_model.train_model(train_dataset, num_epochs=10)
+    # Predict
+    # print("Evaluating the SoftmaxModel...")
+    # Softmax_pred = Softmax_model.predict(test_dataset)
+    # accuracy = (Softmax_pred == test_Label).sum().item() / len(test_labels)
+    # print(f"Accuracy: {accuracy:.4f}")
 
 
     # 2) Baseline:
-
+"""
     baseline_model = BaselineModel(preprocessor)
     # # print(data.y)
     baseline_model.train(train_Label)
@@ -69,16 +82,12 @@ def  main():
     print(f"precision: {calculate_precision(test_Label, prediction)}")
     print(f"accuracy: {calculate_accuracy(test_Label, prediction)}")
 
+"""
+
+
 
 """
-    # 2) Baseline:
   
-    baseline_model = BaselineModel()
-    baseline_model.train(y_train)
-    y_pred_baseline = baseline_model.predict(X_test_text)
-    baseline_acc, baseline_prec, baseline_rec = baseline_model.evaluate(y_test, y_pred_baseline)
-    print("=== Baseline Model ===")
-    print(f"Accuracy: {baseline_acc:.3f}, Precision: {baseline_prec:.3f}, Recall: {baseline_rec:.3f}\n")
 
     # 3) Logistic Regression
     # Vectorization

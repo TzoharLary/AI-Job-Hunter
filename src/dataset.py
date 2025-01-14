@@ -20,6 +20,7 @@ class CustomDataset(Dataset):
         self.data = pd.read_csv(self.data_path)
         self.X = None
         self.y = None
+        self.batch_size = None
 
     def __len__(self):
         return len(self.data)
@@ -76,6 +77,14 @@ class DatasetManager:
         val_loader = DataLoader(self.val_dataset, batch_size=batch_size, shuffle=False)
         test_loader = DataLoader(self.test_dataset, batch_size=batch_size, shuffle=False)
         return train_loader, val_loader, test_loader
+
+    def get_dataloader(self, dataset_name, batch_size):
+        if dataset_name == "train":
+            return DataLoader(self.train_dataset, batch_size=batch_size, shuffle=True)
+        elif dataset_name == "val":
+            return DataLoader(self.val_dataset, batch_size=batch_size, shuffle=False)
+        elif dataset_name == "test":
+            return DataLoader(self.test_dataset, batch_size=batch_size, shuffle=False)
 
 
     def get_datasets(self):
