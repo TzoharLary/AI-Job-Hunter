@@ -32,34 +32,33 @@ def  main():
     preprocessor = DataPreprocessor(csv_path="../data/Job Prediction By Resume.csv")
 
     preprocessor.load_data()
-    # define variable named data as preprocessor.dataset.data and then show df.shape
 
-    data = preprocessor.dataset
-    # print(" the dataset contain x rows and y columns and the do df shape to show the shape of the data")
-    # print(f"the dataset contain {data.shape[0]} rows and {data.shape[1]} columns")
+    data = preprocessor.dataset.data
 
     preprocessor.define_label("title job")
 
-    Category_mapping = preprocessor.Tags_mapping
+    Category_mapping = preprocessor.Tags_mapping    # Convert the data to numbers
+    preprocessor.convert_csv_values(data)
+
     # preprocessor.visualize_data()
     # TODO: remove Tags field from datapreprocessor because he dont really pointer to y field in the dataset object
 
     train_dataset, val_dataset, test_dataset = preprocessor.dataset.get_datasets()
-
     train_Label = [y for _, y in train_dataset]
     train_Example = [x for x, _ in train_dataset]
     val_Label = [y for _, y in val_dataset]
     val_Example = [x for x, _ in val_dataset]
     test_Label = [y for _, y in test_dataset]
     test_Example = [x for x, _ in test_dataset]
+
     # this print really return the first 3 examples and labels of the train, validation, and test datasets
-    # print(f"first 10 Examples and Labels: {train_Example[:3]} {train_Label[:3]}")
-    # print(f"first 10 Examples and Labels: {val_Example[:3]} {val_Label[:3]}")
-    # print(f"first 10 Examples and Labels: {test_Example[:3]} {test_Label[:3]}")
+    """
+    print(f"first 10 Examples and Labels: {train_Example[:3]} {train_Label[:3]}")
+    print(f"first 10 Examples and Labels: {test_Example[:3]} {test_Label[:3]}")
+    print(f"first 10 Examples and Labels: {val_Example[:3]} {val_Label[:3]}")
+    """
 
-
-
-    # 2) Baseline:
+    # Baseline model code:
     """
     baseline_model = BaselineModel(Category_mapping)
     baseline_model.train(train_Label)
@@ -70,17 +69,22 @@ def  main():
     print(f"precision: {calculate_precision(test_Label, baseline_pred)}")
     print(f"accuracy: {calculate_accuracy(test_Label, baseline_pred)}")
     """
+    # print("the current type of data", type(data))
+    # print("the current type of train_dataset", type(train_dataset))
+    # print all the first 3 rows in data
+    pri
+    print(data.head())
 
+    # input_dim, NumOfTags = preprocessor.dataset.get_num_of_XY()
+    # print(f"input_dim: {input_dim}, NumOfTags: {NumOfTags}")
+    # Softmax_model = SoftmaxModel(input_dim=input_dim, NumOfTags=NumOfTags, lr=0.01)
 
-    # 3) Softmax
+    # Softmax_model.train_model(preprocessor.dataset, num_epochs=1)
 
+    # 3) Softmax model code:
+    """
     input_dim, NumOfTags = data.get_num_of_XY()
     print(f"input_dim: {input_dim}, NumOfTags: {NumOfTags}")
-    Softmax_model = SoftmaxModel(input_dim=input_dim, NumOfTags=NumOfTags, lr=0.01)
-
-    Softmax_model.train_model(data, num_epochs=1)
-
-    """
     Softmax_model = SoftmaxModel(input_dim=input_dim, NumOfTags=NumOfTags, lr=0.01)
     # Train the model
     print("Training the SoftmaxModel...")

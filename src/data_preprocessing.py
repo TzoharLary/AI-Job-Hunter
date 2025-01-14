@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import torch
+import pandas as pd
 
 from src.dataset import CustomDataset
 
@@ -13,13 +14,6 @@ class DataPreprocessor:
         self.csv_path = csv_path
         self.dataset = None  # CustomDataset object
 
-
-
-
-
-        self.Features = None
-        self.Tags = None
-
         # Save category mapping so we know which job name corresponds to which numerical category.
         self.Tags_mapping = {}
 
@@ -29,8 +23,6 @@ class DataPreprocessor:
         PURPOSE: Use CustomDataset to load and handle the dataset automatically.
         """
         self.dataset = CustomDataset(self.csv_path, "text_dataset")
-        self.Features = self.dataset.X
-        self.Tags = self.dataset.y
 
     def define_label(self, label_col):
         """
@@ -63,23 +55,18 @@ class DataPreprocessor:
         self.dataset.NumOfTags = len(self.Tags_mapping)
         self.dataset.NumOfFeatures = len(self.dataset.X.columns)
 
-        # Initialize local X and y
-        self.Features = self.dataset.X
-        self.Tags = self.dataset.y
-
-    def convert_to_tensors(self):
+    # covert any text values in the csv file to numbers
+    def convert_csv_values(self, data):
         """
         PURPOSE: 
             Convert the loaded features and tags to PyTorch tensors.
         """
-        # Convert to tensor
-        self.dataset.Features = torch.tensor(
-            self.dataset.X.values, dtype=torch.float32
-        )
-        self.dataset.Tags = torch.tensor(
-            self.dataset.y.values, dtype=torch.long
-        )
-        print("Data converted to tensors.")
+
+        for col in data.columns:
+            if data[col].dtype == 'object':
+                data[col] = self.fit_transform_text(col)
+            else:
+                data[col] = torch.tensor(data[col].values, dtype=torch.float32)
 
     def _combine_text_features(self, row):
         """
@@ -110,6 +97,18 @@ class DataPreprocessor:
             for word in text.split():
                 if word not in self.vocabulary:
                     self.vocabulary[word] = len(self.vocabulary)
+
+        return df[text_column].apply(self.transform_text_to_numbers)
+
+
+    def transform_text_to_numbers(self, text):
+        """
+        Convert a text string into a list of numbers based on the vocabulary.
+        """
+        if pd.isna(text):
+            return []
+        return [self.vocabulary[word] for word in text.split() if word in self.vocabulary]
+
 
     def visualize_data(self):
         """

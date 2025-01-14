@@ -55,6 +55,11 @@ class SoftmaxModel(nn.Module):
             print(f"Starting epoch {epoch + 1}/{num_epochs}")
             total_loss = 0
             train_loader = data.get_dataloader("train", batch_size=100)
+            # print the type of the batch
+            print("Data type:", type(data))
+            print("Batch type:", type(train_loader))
+            # return after the last code line
+            break
 
             for idx, (batch_x, batch_y) in enumerate(train_loader):
 
