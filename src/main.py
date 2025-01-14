@@ -1,6 +1,5 @@
 import numpy as np
 from data_preprocessing import DataPreprocessor
-from src.dataset import DatasetManager
 from metrics import calculate_accuracy, calculate_precision, calculate_recall
 
 
@@ -31,6 +30,7 @@ def  main():
         
     """
     preprocessor = DataPreprocessor(csv_path="../data/Job Prediction By Resume.csv")
+
     preprocessor.load_data()
     # define variable named data as preprocessor.dataset.data and then show df.shape
 
@@ -40,10 +40,11 @@ def  main():
 
     preprocessor.define_label("title job")
 
+    Category_mapping = preprocessor.category_mapping
     # preprocessor.visualize_data()
     # TODO: remove Tags field from datapreprocessor because he dont really pointer to y field in the dataset object
 
-    train_dataset, val_dataset, test_dataset = preprocessor.datasetManager.get_datasets()
+    train_dataset, val_dataset, test_dataset = preprocessor.dataset.get_datasets()
 
     train_Label = [y for _, y in train_dataset]
     train_Example = [x for x, _ in train_dataset]
@@ -56,33 +57,33 @@ def  main():
     # print(f"first 10 Examples and Labels: {val_Example[:3]} {val_Label[:3]}")
     # print(f"first 10 Examples and Labels: {test_Example[:3]} {test_Label[:3]}")
 
+
+
+    # 2) Baseline:
+    """
+    baseline_model = BaselineModel(Category_mapping)
+    baseline_model.train(train_Label)
+    baseline_pred = baseline_model.predict(test_Example)
+
+    print("=== Baseline Model ===")
+    print(f"recall: {calculate_recall(test_Label, baseline_pred)}")
+    print(f"precision: {calculate_precision(test_Label, baseline_pred)}")
+    print(f"accuracy: {calculate_accuracy(test_Label, baseline_pred)}")
+    """
+
+
     # 3) Softmax
     input_dim = len(train_Label)
     num_classes = len(preprocessor.category_mapping)
     Softmax_model = SoftmaxModel(input_dim=input_dim, num_classes=num_classes, lr=0.01)
     # Train the model
     print("Training the SoftmaxModel...")
-    Softmax_model.train_model(train_dataset, num_epochs=10)
+    Softmax_model.train_model(train_dataset, num_epochs=1)
     # Predict
     # print("Evaluating the SoftmaxModel...")
     # Softmax_pred = Softmax_model.predict(test_dataset)
     # accuracy = (Softmax_pred == test_Label).sum().item() / len(test_labels)
     # print(f"Accuracy: {accuracy:.4f}")
-
-
-    # 2) Baseline:
-"""
-    baseline_model = BaselineModel(preprocessor)
-    # # print(data.y)
-    baseline_model.train(train_Label)
-    prediction = baseline_model.predict(test_Label)
-    # so far this code work until here
-    print("=== Baseline Model ===")
-    print(f"recall: {calculate_recall(test_Label, prediction)}")
-    print(f"precision: {calculate_precision(test_Label, prediction)}")
-    print(f"accuracy: {calculate_accuracy(test_Label, prediction)}")
-
-"""
 
 
 
