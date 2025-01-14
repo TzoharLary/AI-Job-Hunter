@@ -12,13 +12,16 @@ class DataPreprocessor:
         self.vocabulary = {}
         self.csv_path = csv_path
         self.dataset = None  # CustomDataset object
-        self.dataColumns = None
+
+
+
+
 
         self.Features = None
         self.Tags = None
 
         # Save category mapping so we know which job name corresponds to which numerical category.
-        self.category_mapping = {}
+        self.Tags_mapping = {}
 
     # TODO: remove the dataset_name parameter from the CustomDataset constructor because it's not used
     def load_data(self):
@@ -39,7 +42,7 @@ class DataPreprocessor:
            1. Receives the column name to be used as the label (label_col), and filters out rows without values (dropna).
            2. Sets self.dataset.y as the values of that column.
            3. Saves the rest in self.dataset.X
-           4. Converts the column values to numerical categories and saves inverted mapping (category_mapping).
+           4. Converts the column values to numerical categories and saves inverted mapping (Tags_mapping).
         """
         # Remove rows that have no value in label_col
         self.dataset.data = self.dataset.data.dropna(subset=[label_col])
@@ -52,11 +55,13 @@ class DataPreprocessor:
         self.dataset.y = self.dataset.y.astype("category").cat.codes
 
         # Save mapping (number -> original category name)
-        self.category_mapping = dict(
+        self.Tags_mapping = dict(
             enumerate(
                 self.dataset.data[label_col].astype("category").cat.categories
             )
         )
+        self.dataset.NumOfTags = len(self.Tags_mapping)
+        self.dataset.NumOfFeatures = len(self.dataset.X.columns)
 
         # Initialize local X and y
         self.Features = self.dataset.X
@@ -131,7 +136,7 @@ class DataPreprocessor:
         test_dist = test_counts / test_counts.sum()
 
         labels = list(range(len(train_counts)))
-        label_names = [self.category_mapping[i] for i in labels]
+        label_names = [self.Tags_mapping[i] for i in labels]
         width = 0.25
 
         print("\nDetailed Label Distributions:")

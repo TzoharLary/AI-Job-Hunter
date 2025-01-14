@@ -20,6 +20,9 @@ class CustomDataset(Dataset):
         self.X = None
         self.y = None
         self.batch_size = None
+        self.NumOfFeatures = None
+        self.NumOfTags = None
+
         train_size = int(0.7 * len(self))
         val_size = int(0.15 * len(self))
         test_size = len(self) - train_size - val_size
@@ -35,6 +38,9 @@ class CustomDataset(Dataset):
         if self.y is not None:
             return self.X.iloc[index].values, self.y.iloc[index]
         return self.X.iloc[index].values
+
+    def get_num_of_XY(self):
+        return self.NumOfFeatures, self.NumOfTags
 
     def get_dataloaders(self, batch_size):
         train_loader = DataLoader(self.train_dataset, batch_size=batch_size, shuffle=True)

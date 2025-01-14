@@ -1,7 +1,7 @@
 import numpy as np
 from data_preprocessing import DataPreprocessor
 from metrics import calculate_accuracy, calculate_precision, calculate_recall
-
+import torch
 
 from Models.softmax import SoftmaxModel
 from Models.baseline import BaselineModel
@@ -40,7 +40,7 @@ def  main():
 
     preprocessor.define_label("title job")
 
-    Category_mapping = preprocessor.category_mapping
+    Category_mapping = preprocessor.Tags_mapping
     # preprocessor.visualize_data()
     # TODO: remove Tags field from datapreprocessor because he dont really pointer to y field in the dataset object
 
@@ -73,9 +73,15 @@ def  main():
 
 
     # 3) Softmax
-    input_dim = len(train_Label)
-    num_classes = len(preprocessor.category_mapping)
-    Softmax_model = SoftmaxModel(input_dim=input_dim, num_classes=num_classes, lr=0.01)
+
+    input_dim, NumOfTags = data.get_num_of_XY()
+    print(f"input_dim: {input_dim}, NumOfTags: {NumOfTags}")
+    Softmax_model = SoftmaxModel(input_dim=input_dim, NumOfTags=NumOfTags, lr=0.01)
+
+    Softmax_model.train_model(data, num_epochs=1)
+
+    """
+    Softmax_model = SoftmaxModel(input_dim=input_dim, NumOfTags=NumOfTags, lr=0.01)
     # Train the model
     print("Training the SoftmaxModel...")
     Softmax_model.train_model(train_dataset, num_epochs=1)
@@ -84,6 +90,7 @@ def  main():
     # Softmax_pred = Softmax_model.predict(test_dataset)
     # accuracy = (Softmax_pred == test_Label).sum().item() / len(test_labels)
     # print(f"Accuracy: {accuracy:.4f}")
+    """
 
 
 
