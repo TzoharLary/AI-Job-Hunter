@@ -1,85 +1,175 @@
-from dataset import CustomDataset
+import matplotlib.pyplot as plt
+import torch
+import pandas as pd
+
+from src.dataset import CustomDataset
 
 
-# Explanation DataPreprocessor class: (Purpose and methods)
-"""
-PURPOSE: Create an object that preprocesses the data while he's get the data from the csv file.
-
-Contain the following methods:
-1. load_data: Read the data from the CSV file, clean it, and convert the job titles to numerical values.
-2. combine_text_features: Combine text features from different columns into a single text for each row.
-   This method is used only if we want to create a new column with combined text.
-3. split_data: Split the data into training, validation, and testing sets.
-4. fit_transform_text: Fit and transform the text data using the TF-IDF vectorizer.
-5. transform_text: Transform the text data using the TF-IDF vectorizer.
-
-add thia method:
-1. method that handle null values in the First Job title column.
-"""
 class DataPreprocessor:
     def __init__(self, csv_path):
+        """
+        PURPOSE: Create an object that preprocesses the data while he's get the data from the csv file.
+        """
+        self.vocabulary = {}
         self.csv_path = csv_path
-        self.dataset = None
+        self.dataset = None  # CustomDataset object
 
-# Explanation load_data method: (Purpose and how it works)
-    """
-    PURPOSE: Read the data from the CSV file, clean it.
-    
-    HOW:
-    1. we read the data from the csv file and store it in the df variable named self.df. (using the read_csv method)
+        # Save category mapping so we know which job name corresponds to which numerical category.
+        self.Tags_mapping = {}
 
-    """
-
+    # TODO: remove the dataset_name parameter from the CustomDataset constructor because it's not used
     def load_data(self):
         """
         PURPOSE: Use CustomDataset to load and handle the dataset automatically.
         """
         self.dataset = CustomDataset(self.csv_path, "text_dataset")
 
-        ## IM not sure if i want to make new column with combined text of Interests, Skills, etc.
-        # # Create a new column with combined text (Interests, Skills, etc.) if desired
-        # self.df["combined_text"] = self.df.apply(self._combine_text_features, axis=1)
-
-# Explanation define_label method: (Purpose and how it works)
-    """
-    PURPOSE: 
-        1. Define the label column for the classification task 
-        2. Convert the labels to numbers.
-    
-    HOW:
-        1. gets parameter that contains the name of the label column and store it in the label_col field.
-        2. we remove rows where there is no job title (the label) using the dropna method.
-        3. we convert the label (job title) to numbers using the fit_transform method.
-        this is useful because machine learning models work with numbers, not text.
-        for example, if we have a job title like 'data scientist', 'software engineer', etc., we can convert them to numbers like 0, 1, etc.
-        
-    """
     def define_label(self, label_col):
-        # Define the label column
-        self.label_col = label_col
-        # Handle null values in the label column
-        self.df = self.df.dropna(subset=[self.label_col])
-        # Convert the label to numbers
-        self.df["job_label"] = self.df[self.label_col].astype('category').cat.codes
+        """
+        PURPOSE:
+           1. Define the label column for the classification task
+           2. Convert the labels to numbers (categories).
 
-# Explanation combine_text_features method: (Purpose and how it works)
-    """
-    PURPOSE: Combine text features from different columns into a single text for each row.
-    
-    HOW:
-    1. we create an empty list called text_parts.
-    2. we create a list of column names that we want to combine.
-    3. we iterate over the columns in the list.
-    4. if the column is in the dataframe and the value is a string, we add it to the text_parts list.
-    5. we use the join method to combine the text parts into a single text.
-    6. we return the combined text.
-    """
+        HOW:
+           1. Receives the column name to be used as the label (label_col), and filters out rows without values (dropna).
+           2. Sets self.dataset.y as the values of that column.
+           3. Saves the rest in self.dataset.X
+           4. Converts the column values to numerical categories and saves inverted mapping (Tags_mapping).
+        """
+        # Remove rows that have no value in label_col
+        self.dataset.data = self.dataset.data.dropna(subset=[label_col])
+
+        # Define label and X
+        self.dataset.y = self.dataset.data[label_col]
+        self.dataset.X = self.dataset.data.drop(columns=[label_col])
+
+        # Convert to categorical (numeric) values
+        self.dataset.y = self.dataset.y.astype("category").cat.codes
+
+        # Save mapping (number -> original category name)
+        self.Tags_mapping = dict(
+            enumerate(
+                self.dataset.data[label_col].astype("category").cat.categories
+            )
+        )
+        self.dataset.NumOfTags = len(self.Tags_mapping)
+        self.dataset.NumOfFeatures = len(self.dataset.X.columns)
+
+    # covert any text values in the csv file to numbers
+    def convert_csv_values(self, data):
+        """
+        PURPOSE: 
+            Convert the loaded features and tags to PyTorch tensors.
+        """
+
+        for col in data.columns:
+            if data[col].dtype == 'object':
+                data[col] = self.fit_transform_text(col)
+            else:
+                data[col] = torch.tensor(data[col].values, dtype=torch.float32)
+
     def _combine_text_features(self, row):
+        """
+        PURPOSE: Combine text features from different columns into a single text for each row.
+        """
         text_parts = []
-        columns_for_text = ["Interests", "Skills", "Certificate course title",
-                            "Work in the past", "First Job title in your current field of work"]
+        columns_for_text = [
+            "Interests",
+            "Skills",
+            "Certificate course title",
+            "Work in the past",
+            "First Job title in your current field of work",
+        ]
         for col in columns_for_text:
             if col in self.df.columns and isinstance(row[col], str):
                 text_parts.append(row[col])
         return " ".join(text_parts)
 
+    def fit_transform_text(self, text_column):
+        """
+        PURPOSE:
+            Tokenize and vectorize the text data using a custom vocabulary-based vectorizer.
+        """
+        df = self.dataset.data
+        all_text = df[text_column].dropna().tolist()
+
+        for text in all_text:
+            for word in text.split():
+                if word not in self.vocabulary:
+                    self.vocabulary[word] = len(self.vocabulary)
+
+        return df[text_column].apply(self.transform_text_to_numbers)
+
+
+    def transform_text_to_numbers(self, text):
+        """
+        Convert a text string into a list of numbers based on the vocabulary.
+        """
+        if pd.isna(text):
+            return []
+        return [self.vocabulary[word] for word in text.split() if word in self.vocabulary]
+
+
+    def visualize_data(self):
+        """
+        PURPOSE:
+            Provides a basic visualization of label distribution
+            across train, val, and test splits.
+        """
+        # Extract the three parts of the dataset from CustomDataset
+        train_dataset, val_dataset, test_dataset = self.dataset.get_datasets()
+
+        # Extract the labels for each part
+        train_labels = [y for _, y in train_dataset]
+        val_labels = [y for _, y in val_dataset]
+        test_labels = [y for _, y in test_dataset]
+
+        # Count values for each part
+        train_counts = torch.tensor(train_labels).bincount()
+        val_counts = torch.tensor(val_labels).bincount()
+        test_counts = torch.tensor(test_labels).bincount()
+
+        # Convert to percentages
+        train_dist = train_counts / train_counts.sum()
+        val_dist = val_counts / val_counts.sum()
+        test_dist = test_counts / test_counts.sum()
+
+        labels = list(range(len(train_counts)))
+        label_names = [self.Tags_mapping[i] for i in labels]
+        width = 0.25
+
+        print("\nDetailed Label Distributions:")
+        for i, label in enumerate(label_names):
+            train_percentage = train_dist[i].item() * 100
+            val_percentage = val_dist[i].item() * 100
+            test_percentage = test_dist[i].item() * 100
+            print(
+                f"{label}: Train {train_percentage:.3f}%, "
+                f"Val {val_percentage:.3f}%, "
+                f"Test {test_percentage:.3f}%"
+            )
+
+        plt.bar([x - width for x in labels], train_dist, width=width, label="Train")
+        plt.bar(labels, val_dist, width=width, label="Validation")
+        plt.bar([x + width for x in labels], test_dist, width=width, label="Test")
+        plt.xlabel("Labels")
+        plt.ylabel("Percentage")
+        plt.title("Label Distribution in Train, Validation, and Test Sets")
+        plt.legend()
+        plt.show()
+
+    def transform_text(self, text_column):
+        """
+        PURPOSE:
+            Transform new text data into numerical vectors using the pre-built vocabulary.
+        """
+        df = self.dataset.data
+
+        def vectorize(text):
+            vector = [0] * len(self.vocabulary)
+            for word in text.split():
+                if word in self.vocabulary:
+                    vector[self.vocabulary[word]] += 1
+            return vector
+
+        df[text_column] = df[text_column].fillna("").apply(vectorize)

@@ -1,5 +1,9 @@
 import numpy as np
-from sklearn.metrics import accuracy_score, precision_score, recall_score
+from src.dataset import CustomDataset
+from src.data_preprocessing import DataPreprocessor
+import torch
+
+from collections import Counter
 
 
 class BaselineModel:
@@ -7,21 +11,21 @@ class BaselineModel:
     baseline model is a model that always predicts the majority class
     """
 
-    def __init__(self):
+    def __init__(self, Category_mapping: dict):
+        self.Category_mapping = Category_mapping
         self.majority_class = None
 
-    def train(self, y_train):
-        # find the majority class
-        values, counts = np.unique(y_train, return_counts=True)
-        idx = np.argmax(counts)
-        self.majority_class = values[idx]
+    def train(self, train_labels: list):
+        """
+        Train the baseline model by identifying the majority class.
+        """
+        train_counts = torch.tensor(train_labels).bincount()
+        self.majority_class = train_counts.argmax().item()
+        print(f"the majority class is {self.Category_mapping[self.majority_class]}")
 
-    def predict(self, X):
-        # doesnt matter what the input is, always predict the majority class
-        return np.full(shape=(len(X),), fill_value=self.majority_class)
+    def predict(self, test_labels: list):
 
-    def evaluate(self, y_true, y_pred):
-        acc = accuracy_score(y_true, y_pred)
-        prec = precision_score(y_true, y_pred, average='weighted', zero_division=0)
-        rec = recall_score(y_true, y_pred, average='weighted', zero_division=0)
-        return acc, prec, rec
+        # doesn't matter what the input is, always predict the majority class
+        return np.full(shape=(len(test_labels),), fill_value=self.majority_class)
+
+
