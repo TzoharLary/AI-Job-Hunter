@@ -58,8 +58,7 @@ class SoftmaxModel(nn.Module):
             # print the type of the batch
             print("Data type:", type(data))
             print("Batch type:", type(train_loader))
-            # return after the last code line
-            break
+
 
             for idx, (batch_x, batch_y) in enumerate(train_loader):
 

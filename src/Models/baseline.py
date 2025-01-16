@@ -15,17 +15,14 @@ class BaselineModel:
         self.Category_mapping = Category_mapping
         self.majority_class = None
 
-    def train(self, train_labels: list):
-        """
-        Train the baseline model by identifying the majority class.
-        """
-        train_counts = torch.tensor(train_labels).bincount()
-        self.majority_class = train_counts.argmax().item()
-        print(f"the majority class is {self.Category_mapping[self.majority_class]}")
+    def train(self, train_labels):
+        train_counts = Counter(train_labels)
+        inverse_mapping = {v: k for k, v in self.Category_mapping.items()}
+        train_counts = Counter([inverse_mapping[label] for label in train_labels])
+        self.majority_class = max(train_counts, key=train_counts.get)
+        print(f"The majority class is {self.Category_mapping[self.majority_class]}")
 
-    def predict(self, test_labels: list):
+    def predict(self, test_labels):
 
-        # doesn't matter what the input is, always predict the majority class
-        return np.full(shape=(len(test_labels),), fill_value=self.majority_class)
-
+        return [self.majority_class] * len(test_labels)
 

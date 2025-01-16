@@ -1,175 +1,107 @@
-import matplotlib.pyplot as plt
-import torch
+from collections import Counter
+import numpy as np
 import pandas as pd
+from nltk.tokenize import word_tokenize
+import nltk
 
 from src.dataset import CustomDataset
-
-
 class DataPreprocessor:
     def __init__(self, csv_path):
-        """
-        PURPOSE: Create an object that preprocesses the data while he's get the data from the csv file.
-        """
         self.vocabulary = {}
         self.csv_path = csv_path
-        self.dataset = None  # CustomDataset object
-
-        # Save category mapping so we know which job name corresponds to which numerical category.
+        self.dataset = None
+        self.df = None
         self.Tags_mapping = {}
+        self.train_dataset = None
+        self.val_dataset = None
+        self.test_dataset = None
+        self.Tag_column = None
 
-    # TODO: remove the dataset_name parameter from the CustomDataset constructor because it's not used
     def load_data(self):
-        """
-        PURPOSE: Use CustomDataset to load and handle the dataset automatically.
-        """
         self.dataset = CustomDataset(self.csv_path, "text_dataset")
+        self.df = self.dataset.data
 
-    def define_label(self, label_col):
-        """
-        PURPOSE:
-           1. Define the label column for the classification task
-           2. Convert the labels to numbers (categories).
+    def clean_column_names(self):
+        self.df.columns = (self.df.columns
+                           .str.strip()
+                           .str.replace(r"\s*\(.*?\)", "", regex=True)
+                           .str.replace(r"[^\w\s]", "_", regex=True)
+                           .str.replace(r"\s+", "_", regex=True)
+                           .str.lower())
 
-        HOW:
-           1. Receives the column name to be used as the label (label_col), and filters out rows without values (dropna).
-           2. Sets self.dataset.y as the values of that column.
-           3. Saves the rest in self.dataset.X
-           4. Converts the column values to numerical categories and saves inverted mapping (Tags_mapping).
-        """
-        # Remove rows that have no value in label_col
-        self.dataset.data = self.dataset.data.dropna(subset=[label_col])
+    def handle_missing_values(self, column_name, fill_value):
+        if column_name not in self.df.columns:
+            raise KeyError(f"Column '{column_name}' not found in dataset.")
+        self.df[column_name] = self.df[column_name].fillna(fill_value)
 
-        # Define label and X
-        self.dataset.y = self.dataset.data[label_col]
-        self.dataset.X = self.dataset.data.drop(columns=[label_col])
+    def handle_multivalue_cells(self):
 
-        # Convert to categorical (numeric) values
+        for column in self.df.select_dtypes(include=['object']).columns:
+            self.df[column] = self.df[column].apply(
+                lambda x: x.split(";") if pd.notnull(x) and ";" in str(x) else (str(x) if pd.notnull(x) else [])
+            )
+
+    def define_label(self, Tag_column):
+        self.Tag_column = Tag_column
+        self.dataset.data = self.df.dropna(subset=[Tag_column])
+        self.dataset.y = self.df[Tag_column]
+        self.dataset.X = self.df.drop(columns=[Tag_column, "match_percentage"])  # Dropping match_percentage column
         self.dataset.y = self.dataset.y.astype("category").cat.codes
-
-        # Save mapping (number -> original category name)
         self.Tags_mapping = dict(
             enumerate(
-                self.dataset.data[label_col].astype("category").cat.categories
+                self.dataset.data[Tag_column].astype("category").cat.categories
             )
         )
         self.dataset.NumOfTags = len(self.Tags_mapping)
         self.dataset.NumOfFeatures = len(self.dataset.X.columns)
 
-    # covert any text values in the csv file to numbers
-    def convert_csv_values(self, data):
-        """
-        PURPOSE: 
-            Convert the loaded features and tags to PyTorch tensors.
-        """
+    def split_data(self, train_frac=0.7, val_frac=0.15, test_frac=0.15, seed=42):
+        np.random.seed(seed)
+        indices = np.random.permutation(len(self.df))
+        train_end = int(train_frac * len(self.df))
+        val_end = train_end + int(val_frac * len(self.df))
+        self.train_dataset = self.df.iloc[indices[:train_end]]
+        self.val_dataset = self.df.iloc[indices[train_end:val_end]]
+        self.test_dataset = self.df.iloc[indices[val_end:]]
 
-        for col in data.columns:
-            if data[col].dtype == 'object':
-                data[col] = self.fit_transform_text(col)
-            else:
-                data[col] = torch.tensor(data[col].values, dtype=torch.float32)
+    def get_datasets(self, name):
 
-    def _combine_text_features(self, row):
-        """
-        PURPOSE: Combine text features from different columns into a single text for each row.
-        """
-        text_parts = []
-        columns_for_text = [
-            "Interests",
-            "Skills",
-            "Certificate course title",
-            "Work in the past",
-            "First Job title in your current field of work",
-        ]
-        for col in columns_for_text:
-            if col in self.df.columns and isinstance(row[col], str):
-                text_parts.append(row[col])
-        return " ".join(text_parts)
+        if name == "train":
+            return self.train_dataset
+        elif name == "val":
+            return self.val_dataset
+        elif name == "test":
+            return self.test_dataset
+        else:
+            raise ValueError("Dataset name is not valid")
 
-    def fit_transform_text(self, text_column):
-        """
-        PURPOSE:
-            Tokenize and vectorize the text data using a custom vocabulary-based vectorizer.
-        """
-        df = self.dataset.data
-        all_text = df[text_column].dropna().tolist()
+    def get_test_Label(self):
+        return  self.test_dataset[self.Tag_column]
 
-        for text in all_text:
-            for word in text.split():
-                if word not in self.vocabulary:
-                    self.vocabulary[word] = len(self.vocabulary)
+    def tokenize_texts(self, texts, max_vocab_size=10000):
+        tokenized_texts = [word_tokenize(text.lower()) for text in texts]
+        all_tokens = [token for text in tokenized_texts for token in text]
+        vocab_counter = Counter(all_tokens).most_common(max_vocab_size)
+        self.vocabulary = {word: idx + 1 for idx, (word, _) in enumerate(vocab_counter)}
 
-        return df[text_column].apply(self.transform_text_to_numbers)
+        return [[self.vocabulary.get(word, 0) for word in text] for text in tokenized_texts]
 
+    def pad_sequences(self, sequences):
 
-    def transform_text_to_numbers(self, text):
-        """
-        Convert a text string into a list of numbers based on the vocabulary.
-        """
-        if pd.isna(text):
-            return []
-        return [self.vocabulary[word] for word in text.split() if word in self.vocabulary]
+        maxlen = max(len(seq) for seq in sequences)
+        for i in range(len(sequences)):
+            sequences[i] = sequences[i] + [0] * (maxlen - len(sequences[i]))
+        return sequences
 
+    def preprocess_dataset(self):
 
-    def visualize_data(self):
-        """
-        PURPOSE:
-            Provides a basic visualization of label distribution
-            across train, val, and test splits.
-        """
-        # Extract the three parts of the dataset from CustomDataset
-        train_dataset, val_dataset, test_dataset = self.dataset.get_datasets()
-
-        # Extract the labels for each part
-        train_labels = [y for _, y in train_dataset]
-        val_labels = [y for _, y in val_dataset]
-        test_labels = [y for _, y in test_dataset]
-
-        # Count values for each part
-        train_counts = torch.tensor(train_labels).bincount()
-        val_counts = torch.tensor(val_labels).bincount()
-        test_counts = torch.tensor(test_labels).bincount()
-
-        # Convert to percentages
-        train_dist = train_counts / train_counts.sum()
-        val_dist = val_counts / val_counts.sum()
-        test_dist = test_counts / test_counts.sum()
-
-        labels = list(range(len(train_counts)))
-        label_names = [self.Tags_mapping[i] for i in labels]
-        width = 0.25
-
-        print("\nDetailed Label Distributions:")
-        for i, label in enumerate(label_names):
-            train_percentage = train_dist[i].item() * 100
-            val_percentage = val_dist[i].item() * 100
-            test_percentage = test_dist[i].item() * 100
-            print(
-                f"{label}: Train {train_percentage:.3f}%, "
-                f"Val {val_percentage:.3f}%, "
-                f"Test {test_percentage:.3f}%"
-            )
-
-        plt.bar([x - width for x in labels], train_dist, width=width, label="Train")
-        plt.bar(labels, val_dist, width=width, label="Validation")
-        plt.bar([x + width for x in labels], test_dist, width=width, label="Test")
-        plt.xlabel("Labels")
-        plt.ylabel("Percentage")
-        plt.title("Label Distribution in Train, Validation, and Test Sets")
-        plt.legend()
-        plt.show()
-
-    def transform_text(self, text_column):
-        """
-        PURPOSE:
-            Transform new text data into numerical vectors using the pre-built vocabulary.
-        """
-        df = self.dataset.data
-
-        def vectorize(text):
-            vector = [0] * len(self.vocabulary)
-            for word in text.split():
-                if word in self.vocabulary:
-                    vector[self.vocabulary[word]] += 1
-            return vector
-
-        df[text_column] = df[text_column].fillna("").apply(vectorize)
+        for column in self.df.columns:
+            if self.df[column].dtype == 'object' or self.df[column].apply(lambda x: isinstance(x, str)).any():
+                texts = self.df[column].tolist()
+                value_types = Counter(type(value).__name__ for value in texts)
+                for value_type, count in value_types.items():
+                    print(f"{value_type}: {count}")
+                    return 0
+                tokenized_texts = self.tokenize_texts(texts)
+                padded_texts = self.pad_sequences(tokenized_texts)
+                self.df[column] = padded_texts

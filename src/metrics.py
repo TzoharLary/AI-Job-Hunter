@@ -1,19 +1,35 @@
-# This file will be used to contain performance measurement functions 
-# such as accuracy, precision, recall, F1-score, and related visualizations.
-
-
-# Explanation of metrics.py:
-"""
-PURPOSE:
-This file contains functions to calculate and log various classification metrics such as
-accuracy, precision, recall, and F1-score. It also contains utilities to compare the performance
-of multiple models and visualize the results using bar charts.
-"""
-
 import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 from tensorflow import summary
+
+# Mae and Mse function - check the mse and the mae for the model:
+def MSE_MAE(predictions, true_labels, writer=None, step=0):
+    mse = np.mean((predictions - true_labels) ** 2)
+    mae = np.mean(np.abs(predictions - true_labels))
+    if writer:
+        with writer.as_default():
+            tf.summary.scalar("MSE", mse, step=step)
+            tf.summary.scalar("MAE", mae, step=step)
+    return mse
+
+# visual result of model against the true labels, the func get parameter of prediction that create by the model and the true labels
+def visualize_results(predictions, true_labels):
+    plt.figure(figsize=(12, 6))
+    print(f"the prediction for all examples: {predictions[0]}")
+    print(f"the true labels for test_examples:  \n {true_labels}")
+    plt.scatter(range(len(true_labels)), true_labels, label="True Labels", color='blue')
+    plt.scatter(range(len(predictions)), predictions, label="Predictions", color='red', alpha=0.7)
+    plt.xlabel("Sample Index")
+    plt.ylabel("Label")
+    plt.yticks(fontsize=10)
+    plt.legend()
+    plt.grid(True)
+    plt.title("Model Predictions vs. True Labels", fontsize=16, pad=35)
+    plt.figtext(0.5, 1.02,
+                "Blue points represent the actual labels, while red points represent model predictions.\nThe alignment between both indicates prediction accuracy.",
+                fontsize=12, ha='center', transform=plt.gca().transAxes)
+    plt.show()
 
 # Function to calculate accuracy
 def calculate_accuracy(true_labels, predictions, writer=None, step=0):
