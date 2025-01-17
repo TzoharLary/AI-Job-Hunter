@@ -14,13 +14,31 @@ def  main():
     preprocessor.load_data()
     df = preprocessor.df
     preprocessor.clean_column_names()
+
+
+
+    print(f"check how much None value the column skills contain before handling missing values in the main: \n{df['skills'].isnull().sum()}")
     preprocessor.handle_missing_values("skills", "No")
+    print(f"check how much None value the column skills contain after handling missing values in the main: \n{df['skills'].isnull().sum()}")
     preprocessor.handle_missing_values("first_job_title_in_your_current_field_of_work", "Unemployed")
     preprocessor.handle_missing_values("certificate_course_title", "No")
-    preprocessor.handle_multivalue_cells()
+    list1 = []
+    for column in df.select_dtypes(include=['object']).columns:
+        if df[column].str.contains(";").any():
+           list1.append(column)
+    print(f"columns that contain ; in the df: {list1}")
+
+    preprocessor.handle_multivalued_cells()
+    list2 = []
+    for column in df.select_dtypes(include=['object']).columns:
+        if df[column].str.contains(";").any():
+            list2.append(column)
+    print(f"columns that contain ; in the df: {list2}")
+
     preprocessor.define_label("title_job")
     preprocessor.preprocess_dataset()
     preprocessor.split_data()
+
     # print 3 Examples and Labels of each dataset
     """
     print(f"first 10 Examples and Labels: {train_Example[:3]} {train_Label[:3]}")
@@ -28,6 +46,12 @@ def  main():
     print(f"first 10 Examples and Labels: {val_Example[:3]} {val_Label[:3]}")
     """
 
+
+    # link to project in kaggle of classifying fake news using logistic regression
+    # https://www.kaggle.com/code/daniilkrasnoproshin/catch-fake-news-with-logistic-regression
+
+    """
+    
     # Baseline model
     baseline = BaselineModel(Category_mapping=preprocessor.Tags_mapping)
     baseline.train(preprocessor.train_dataset['title_job'])
@@ -42,7 +66,7 @@ def  main():
     print(f"precision: {calculate_precision(test_Label, baseline_pred)}")
     print(f"accuracy: {calculate_accuracy(test_Label, baseline_pred)}")
     print(f"f1_score: {calculate_f1_score(test_Label, baseline_pred)}")
-
+    """
 
     # 3) Softmax model code:
     """

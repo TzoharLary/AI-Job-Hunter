@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 from nltk.tokenize import word_tokenize
 import nltk
+from numpy import dtype
 
 from src.dataset import CustomDataset
 class DataPreprocessor:
@@ -18,7 +19,7 @@ class DataPreprocessor:
         self.Tag_column = None
 
     def load_data(self):
-        self.dataset = CustomDataset(self.csv_path, "text_dataset")
+        self.dataset = CustomDataset(self.csv_path)
         self.df = self.dataset.data
 
     def clean_column_names(self):
@@ -34,12 +35,17 @@ class DataPreprocessor:
             raise KeyError(f"Column '{column_name}' not found in dataset.")
         self.df[column_name] = self.df[column_name].fillna(fill_value)
 
-    def handle_multivalue_cells(self):
-
+    def handle_multivalued_cells(self):
         for column in self.df.select_dtypes(include=['object']).columns:
-            self.df[column] = self.df[column].apply(
-                lambda x: x.split(";") if pd.notnull(x) and ";" in str(x) else (str(x) if pd.notnull(x) else [])
-            )
+            updated_values = []
+            for value in self.df[column]:
+                if pd.notnull(value) and ";" in str(value):
+                    updated_values.append(value.split(";"))
+                elif pd.notnull(value):
+                    updated_values.append(str(value))
+                else:
+                    updated_values.append([])
+            self.df[column] = updated_values
 
     def define_label(self, Tag_column):
         self.Tag_column = Tag_column
@@ -87,7 +93,6 @@ class DataPreprocessor:
         return [[self.vocabulary.get(word, 0) for word in text] for text in tokenized_texts]
 
     def pad_sequences(self, sequences):
-
         maxlen = max(len(seq) for seq in sequences)
         for i in range(len(sequences)):
             sequences[i] = sequences[i] + [0] * (maxlen - len(sequences[i]))
@@ -98,10 +103,6 @@ class DataPreprocessor:
         for column in self.df.columns:
             if self.df[column].dtype == 'object' or self.df[column].apply(lambda x: isinstance(x, str)).any():
                 texts = self.df[column].tolist()
-                value_types = Counter(type(value).__name__ for value in texts)
-                for value_type, count in value_types.items():
-                    print(f"{value_type}: {count}")
-                    return 0
                 tokenized_texts = self.tokenize_texts(texts)
                 padded_texts = self.pad_sequences(tokenized_texts)
                 self.df[column] = padded_texts
